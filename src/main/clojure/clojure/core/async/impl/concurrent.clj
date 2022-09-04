@@ -58,8 +58,8 @@
        ThreadFactory
        (newThread [_this runnable]
          (let [body (if init-fn
-                      (gen-delegate ThreadStart [] (init-fn) runnable)
-                      (gen-delegate ThreadStart [] runnable))
+                      (gen-delegate ThreadStart [] (init-fn) (runnable))
+                      (gen-delegate ThreadStart [] (runnable)))
                t (Thread. ^ThreadStart body)]
            (doto t
              (.set_Name (format name-format (swap! counter inc)))
