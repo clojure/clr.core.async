@@ -16,9 +16,9 @@
             [clojure.tools.analyzer.ast :as ast]
             [clojure.tools.analyzer.env :as env]
             [clojure.tools.analyzer.passes :refer [schedule]]
-            [clojure.tools.analyzer.passes.jvm.annotate-loops :refer [annotate-loops]]
-            [clojure.tools.analyzer.passes.jvm.warn-on-reflection :refer [warn-on-reflection]]
-            [clojure.tools.analyzer.jvm :as an-jvm]
+            [clojure.tools.analyzer.passes.clr.annotate-loops :refer [annotate-loops]]
+            [clojure.tools.analyzer.passes.clr.warn-on-reflection :refer [warn-on-reflection]]
+            [clojure.tools.analyzer.clr :as an-clr]
             [clojure.core.async.impl.protocols :as impl]
             [clojure.set :as set])
   (:import [java.util.concurrent.locks Lock]
@@ -1014,7 +1014,7 @@
    :Return `return-chan})
 
 (defn mark-transitions
-  {:pass-info {:walk :post :depends #{} :after an-jvm/default-passes}}
+  {:pass-info {:walk :post :depends #{} :after an-clr/default-passes}}
   [{:keys [op fn] :as ast}]
   (let [transitions (-> (env/deref-env) :passes-opts :mark-transitions/transitions)]
     (if (and (= op :invoke)
@@ -1053,7 +1053,7 @@
   (-> env vals first map?))
 
 (defn make-env [input-env crossing-env]
-  (assoc (an-jvm/empty-env)
+  (assoc (an-clr/empty-env)
          :locals (into {}
                        (if (nested-go? input-env)
                          (for [[l expr] input-env
@@ -1072,7 +1072,7 @@
   (println "----")
   x)
 
-(def passes (into (disj an-jvm/default-passes #'warn-on-reflection)
+(def passes (into (disj an-clr/default-passes #'warn-on-reflection)
                   #{#'propagate-recur
                     #'propagate-transitions
                     #'mark-transitions}))
@@ -1097,8 +1097,8 @@
       [(vary-meta local merge (when tag {:tag tag})) init])))
 
 (defn state-machine [body num-user-params [crossing-env env] user-transitions]
-  (binding [an-jvm/run-passes run-passes]
-    (-> (an-jvm/analyze `(let [~@(if (nested-go? env)
+  (binding [an-clr/run-passes run-passes]
+    (-> (an-clr/analyze `(let [~@(if (nested-go? env)
                                    (mapcat (fn [[l {:keys [tag]}]]
                                              (emit-hinted l tag crossing-env))
                                            env)
@@ -1109,7 +1109,7 @@
                                            env))]
                            ~body)
                         (make-env env crossing-env)
-                        {:passes-opts (merge an-jvm/default-passes-opts
+                        {:passes-opts (merge an-clr/default-passes-opts
                                              {:uniquify/uniquify-env true
                                               :mark-transitions/transitions user-transitions})})
         (parse-to-state-machine user-transitions)

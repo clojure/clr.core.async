@@ -3,7 +3,7 @@
   :url "https://github.com/clr.core.async"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
-  :dependencies []
+  :dependencies [[org.clojure.clr/tools.analyzer.clr "1.2.2"]]
   :warn-on-reflection true
   :source-paths ["src/main/clojure"]
   :test-paths ["src/test/clojure"]  
