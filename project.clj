@@ -1,6 +1,6 @@
 (defproject clr.core.async "0.1.0-SNAPSHOT"
-  :description "FIXME: write description"
-  :url "http://example.com/FIXME"
+  :description "A port of core.async to ClojureCLR"
+  :url "https://github.com/clr.core.async"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies []
