@@ -19,10 +19,10 @@
             [clojure.tools.analyzer.passes.clr.annotate-loops :refer [annotate-loops]]
             [clojure.tools.analyzer.passes.clr.warn-on-reflection :refer [warn-on-reflection]]
             [clojure.tools.analyzer.clr :as an-clr]
-            [clojure.core.async.impl.protocols :as impl]
+            [clojure.core.async.impl.protocols :as impl]   [clojure.core.async.impl.mutex :as mutex]   ;;; added mutex
             [clojure.set :as set])
-  (:import [java.util.concurrent.locks Lock]
-           [java.util.concurrent.atomic AtomicReferenceArray]))
+  (:import [clojure.core.async.impl.mutex ILock]                                           ;;; [java.util.concurrent.locks Lock]
+           ))                                                                            ;;; [java.util.concurrent.atomic AtomicReferenceArray]
 
 (defn debug [x]
   (pprint x)
@@ -35,11 +35,11 @@
 (def ^{:const true :tag 'long} EXCEPTION-FRAMES 4)
 (def ^{:const true :tag 'long} USER-START-IDX 5)
 
-(defn aset-object [^AtomicReferenceArray arr ^long idx o]
-  (.set arr idx o))
+(defn aset-object [^System.Array arr ^long idx o]                            ;;; ^AtomicReferenceArray -- for now, replace with a regular array.  We'll work on the atomic version eventully.
+  (.SetValue arr o idx))                                                     ;;; (.set arr idx o)
 
-(defn aget-object [^AtomicReferenceArray arr ^long idx]
-  (.get arr idx))
+(defn aget-object [^System.Array arr ^long idx]                              ;;; ^AtomicReferenceArray -- for now, replace with a regular array.  We'll work on the atomic version eventully.
+  (.GetValue arr idx))                                                       ;;; .get
 
 (defmacro aset-all!
   [arr & more]
@@ -677,7 +677,7 @@
                         ex-id (add-instruction (->Const ::value))
                         _ (push-alter-binding :locals assoc (:name ex-bind)
                                               (vary-meta ex-id merge (when (:tag ex-bind)
-                                                                       {:tag (.getName ^Class (:tag ex-bind))})))
+                                                                       {:tag (.FullName ^Type (:tag ex-bind))})))                     ;;; .getName ^Class
                         result-id (item-to-ssa catch-body)
                         ;; if there is a finally, jump to it after
                         ;; handling the exception, if not jump to exit
@@ -922,7 +922,7 @@
         local-map (atom {::next-idx local-start-idx})
         block-catches (:block-catches machine)]
     `(fn state-machine#
-       ([] (aset-all! (AtomicReferenceArray. ~state-arr-size)
+       ([] (aset-all! (System.Array/CreateInstance Object ~state-arr-size)                           ;;; (AtomicReferenceArray. ~state-arr-size)  -- use an Array for now
                       ~FN-IDX state-machine#
                       ~STATE-IDX ~(:start-block machine)))
        ([~state-sym]
@@ -941,7 +941,7 @@
                                  (if (identical? result# :recur)
                                    (recur)
                                    result#)))
-                             (catch Throwable ex#
+                             (catch Exception ex#                                                                             ;;; Throwable
                                (aset-all! ~state-sym ~VALUE-IDX ex#)
                                (if (seq (aget-object ~state-sym ~EXCEPTION-FRAMES))
                                  (aset-all! ~state-sym ~STATE-IDX (first (aget-object ~state-sym ~EXCEPTION-FRAMES)))
@@ -962,7 +962,7 @@
 (defn- fn-handler
   [f]
   (reify
-   Lock
+   ILock                             ;;; Lock
    (lock [_])
    (unlock [_])
 
@@ -979,7 +979,7 @@
 (defn run-state-machine-wrapped [state]
   (try
     (run-state-machine state)
-    (catch Throwable ex
+    (catch Exception ex                                                       ;;; Throwable
       (impl/close! (aget-object state USER-START-IDX))
       (throw ex))))
 
@@ -1102,9 +1102,9 @@
                                    (mapcat (fn [[l {:keys [tag]}]]
                                              (emit-hinted l tag crossing-env))
                                            env)
-                                   (mapcat (fn [[l ^clojure.lang.Compiler$LocalBinding lb]]
-                                             (emit-hinted l (when (.hasJavaClass lb)
-                                                              (some-> lb .getJavaClass .getName))
+                                   (mapcat (fn [[l ^ clojure.lang.CljCompiler.Ast.LocalBinding lb]]                      ;;; clojure.lang.Compiler$LocalBinding
+                                             (emit-hinted l (when (.HasClrType lb)                                       ;;; .hasJavaClass
+                                                              (some-> lb .ClrType .FullName))                            ;;; .getJavaClass .getName
                                                           crossing-env))
                                            env))]
                            ~body)
