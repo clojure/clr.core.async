@@ -12,7 +12,7 @@
             [clojure.core.async.impl.dispatch :as dispatch]
             [clojure.core.async.impl.mutex :as mutex])
   (:import [System.Collections.Generic |LinkedList`1[System.Object]| |Queue`1[System.Object]|]        ;;; [java.util LinkedList Queue]
-           [clojure.core.async.impl.mutex Lock]                                                                                           ;;; [java.util.concurrent.locks Lock]
+           [clojure.core.async.impl.mutex ILock]                                                      ;;; [java.util.concurrent.locks Lock]
            [clojure.lang IDeref]))   
 
 (set! *warn-on-reflection* true)
@@ -20,7 +20,7 @@
 (defmacro assert-unlock [lock test msg]
   `(when-not ~test
      (.unlock ~lock)
-     (throw (new InvalidOperationException (str "Assert failed: " ~msg "\n" (pr-str '~test))))))             ;;; AssertionError
+     (throw (new InvalidOperationException (str "Assert failed: " ~msg "\n" (pr-str '~test))))))      ;;; AssertionError
 
 (defn box [val]
   (reify IDeref
@@ -86,31 +86,31 @@
 ;; this is more straightforward -- enumerator vs iterator again, but no delete
     (let [iter (.GetEnumerator puts)]
 	  (when (.MoveNext iter)
-	    (loop [[^Lock putter] (.Current iter)]
+	    (loop [[^ILock putter] (.Current iter)]                                     ;;; ^Lock
          (let [put-cb (and (impl/active? putter) (impl/commit putter))]
            (.unlock putter)
            (when put-cb
              (dispatch/run (fn [] (put-cb true))))  
 		   (when (.MoveNext iter)
              (recur (.Current iter)))))))		   
-   (.Clear puts)                                    ;;; .clear
+   (.Clear puts)                                                                    ;;; .clear
    (impl/close! this))
 
   impl/WritePort
   (put!
    [this val handler]
    (when (nil? val)
-     (throw (ArgumentException. "Can't put nil on channel")))            ;;; IllegalArgumentException
+     (throw (ArgumentException. "Can't put nil on channel")))                 ;;; IllegalArgumentException
    (.lock mutex)
    (cleanup this)
    (if @closed
-     (let [^Lock handler handler]
+     (let [^ILock handler handler]                                            ;;; ^Lock
        (.lock handler)
        (when (impl/active? handler) (impl/commit handler))
        (.unlock handler)
        (.unlock mutex)
        (box false))
-     (let [^Lock handler handler]
+     (let [^ILock handler handler]                                            ;;; ^Lock
        (if (and buf (not (impl/full? buf)) (not (= (.Count takes) 0)))        ;;; (.isEmpty takes)
          (do
            (.lock handler)
@@ -135,7 +135,7 @@
 						[take-cbs (loop [takers []
 						                 curr-node (.First takes)]
 						            (if (and curr-node (pos? (count buf)))
-									  (let [^Lock taker curr-node
+									  (let [^ILock taker curr-node                                   ;;; ^Lock
 									         next-node (.Next curr-node)]
 									    (.lock taker)
 										(let [ret (and (impl/active? taker) (impl/commit taker))]
@@ -166,7 +166,7 @@
                    nil))))
          (let  ;;;[iter (.iterator takes)
                ;;;[put-cb take-cb] (when (.hasNext iter)
-               ;;;                   (loop [^Lock taker (.next iter)]
+               ;;;                   (loop [^Lock taker (.next iter)]                     
                ;;;                     (if (< (impl/lock-id handler) (impl/lock-id taker))
                ;;;                       (do (.lock handler) (.lock taker))
                ;;;                       (do (.lock taker) (.lock handler)))
@@ -181,7 +181,7 @@
                ;;;                         (when (.hasNext iter)
                ;;;                           (recur (.next iter)))))))]
 			   [[put-cb take-cb] (when (.First takes)
-			                      (loop [^Lock taker (.First takes)
+			                      (loop [^ILock taker (.First takes)                                          ;;; ^Lock
 								         curr-node (.First takes)]
 								    (if (< (impl/lock-id handler) (impl/lock-id taker))
 									  (do (.lock handler) (.lock taker))
@@ -219,7 +219,7 @@
                (do
                  (when (and (impl/active? handler) (impl/blockable? handler))
                    (assert-unlock mutex
-                                  (< (.Count puts) impl/MAX-QUEUE-SIZE)                   ;;; .size
+                                  (< (.Count puts) impl/MAX-QUEUE-SIZE)                       ;;; .size
                                   (str "No more than " impl/MAX-QUEUE-SIZE
                                        " pending puts are allowed on a single channel."
                                        " Consider using a windowed buffer."))
@@ -232,7 +232,7 @@
    [this handler]
    (.lock mutex)
    (cleanup this)
-   (let [^Lock handler handler
+   (let [^ILock handler handler                                                               ;;; ^Lock
          commit-handler (fn []
                           (.lock handler)
                           (let [take-cb (and (impl/active? handler) (impl/commit handler))]
@@ -260,7 +260,7 @@
 			     (loop [cbs []
 				        curr-node (.First puts)]
 				   (let [next-node (.Next curr-node)
-						 [^Lock putter val] (.Value curr-node)]
+						 [^ILock putter val] (.Value curr-node)]                               ;;; ^Lock
 				   (.lock putter)
 				   (let [cb (and (impl/active? putter) (impl/commit putter))]
 				     (.unlock putter)
@@ -302,7 +302,7 @@
 			 (when (.First puts)
 			   (loop [curr-node (.First puts)]
                  (let [next-node (.Next curr-node)
-					   [^Lock putter val] (.Value curr-node)]
+					   [^ILock putter val] (.Value curr-node)]                           ;;; ^Lock
                    (if (< (impl/lock-id handler) (impl/lock-id putter))
                      (do (.lock handler) (.lock putter))
                      (do (.lock putter) (.lock handler)))
@@ -373,7 +373,7 @@
        (when (.First takes)
 	     (loop [curr-node (.First takes)]
 		   (let [next-node (.Next curr-node)
-		         ^Lock taker (.Value curr-node)]
+		         ^ILock taker (.Value curr-node)]                                                   ;;; ^Lock
 		     (.lock taker)
 			 (let [take-cb (and (impl/active? taker) (impl/commit taker))]
 			   (.unlock taker)
