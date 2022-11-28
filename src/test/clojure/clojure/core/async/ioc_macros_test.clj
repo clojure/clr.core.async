@@ -306,7 +306,7 @@
           v (try (runner
                   (try
                     (try
-                      (throw (InvalidOperationException. 42))                            ;;; AssertionError
+                      (throw (InvalidOperationException. "42"))                            ;;; AssertionError   + stringify 42
                       (finally (swap! a inc)))
                     (finally (swap! a inc))))
                  (catch InvalidOperationException ex ex))]                            ;;; AssertionError
@@ -316,7 +316,7 @@
           v (try (runner
                   (try
                     (try
-                      (throw (InvalidOperationException. 42))                            ;;; AssertionError
+                      (throw (InvalidOperationException. "42"))                            ;;; AssertionError   + stringify 42
                       (catch Exception ex (throw ex))                              ;;; Throwable
                       (finally (swap! a inc)))
                     (catch Exception ex (throw ex))                              ;;; Throwable
@@ -328,7 +328,7 @@
           v (try (runner
                   (try
                     (try
-                      (throw (InvalidOperationException. (pause 42)))                            ;;; AssertionError
+                      (throw (InvalidOperationException. (pause "42")))                            ;;; AssertionError  + stringify 42
                       (catch Exception ex (pause (throw ex)))                              ;;; Throwable
                       (finally (pause (swap! a inc))))
                     (catch Exception ex (pause (throw ex)))                              ;;; Throwable

@@ -39,7 +39,7 @@
 ;;; We need to walk two pointers, current node and next node.  Check the current node, delete if required.
 ;;; Then move the pointers.
 
-(deftype ManyToManyChannel [^|LinkedList`1| takes ^|LinkedList`1| puts ^|Queue`1| buf closed ^clojure.core.async.impl.mutex.Lock mutex add!]
+(deftype ManyToManyChannel [^|LinkedList`1| takes ^|LinkedList`1| puts ^|Queue`1| buf closed ^clojure.core.async.impl.mutex.ILock mutex add!]
   MMC
   (cleanup
    [_]
@@ -87,12 +87,13 @@
     (let [iter (.GetEnumerator puts)]
 	  (when (.MoveNext iter)
 	    (loop [[^ILock putter] (.Current iter)]                                     ;;; ^Lock
-         (let [put-cb (and (impl/active? putter) (impl/commit putter))]
-           (.unlock putter)
-           (when put-cb
-             (dispatch/run (fn [] (put-cb true))))  
-		   (when (.MoveNext iter)
-             (recur (.Current iter)))))))		   
+		  (.lock putter)
+          (let [put-cb (and (impl/active? putter) (impl/commit putter))]
+            (.unlock putter)
+            (when put-cb
+              (dispatch/run (fn [] (put-cb true))))  
+		    (when (.MoveNext iter)
+              (recur (.Current iter)))))))		   
    (.Clear puts)                                                                    ;;; .clear
    (impl/close! this))
 
@@ -135,7 +136,7 @@
 						[take-cbs (loop [takers []
 						                 curr-node (.First takes)]
 						            (if (and curr-node (pos? (count buf)))
-									  (let [^ILock taker curr-node                                   ;;; ^Lock
+									  (let [^ILock taker (.Value curr-node)                                   ;;; ^Lock
 									         next-node (.Next curr-node)]
 									    (.lock taker)
 										(let [ret (and (impl/active? taker) (impl/commit taker))]
@@ -181,8 +182,8 @@
                ;;;                         (when (.hasNext iter)
                ;;;                           (recur (.next iter)))))))]
 			   [[put-cb take-cb] (when (.First takes)
-			                      (loop [^ILock taker (.First takes)                                          ;;; ^Lock
-								         curr-node (.First takes)]
+			                      (loop [curr-node (.First takes)
+								         ^ILock taker (.Value curr-node)]                                          ;;; ^Lock
 								    (if (< (impl/lock-id handler) (impl/lock-id taker))
 									  (do (.lock handler) (.lock taker))
 									  (do (.lock taker) (.lock handler)))
@@ -196,7 +197,7 @@
 										  ret)
 										(let [next-node (.Next curr-node)]
 										  (when next-node
-										    (recur next-node next-node)))))))]
+										    (recur next-node (.Value next-node))))))))]
 										  
            (if (and put-cb take-cb)
              (do
