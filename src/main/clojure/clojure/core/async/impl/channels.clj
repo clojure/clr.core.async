@@ -388,8 +388,8 @@
        nil))))
 
 (defn- ex-handler [ex]
-  ;;;(-> (Thread/currentThread)    ------------we have no equivalant of this
-  ;;;    .getUncaughtExceptionHandler
+  ;;;(-> (Thread/currentThread)
+  ;;;    .getUncaughtExceptionHandler             ------------we have no equivalent of this
   ;;;    (.uncaughtException (Thread/currentThread) ex))
   nil)
 

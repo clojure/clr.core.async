@@ -19,39 +19,13 @@
             [clojure.tools.analyzer.passes.clr.annotate-loops :refer [annotate-loops]]
             [clojure.tools.analyzer.passes.clr.warn-on-reflection :refer [warn-on-reflection]]
             [clojure.tools.analyzer.clr :as an-clr]
-            [clojure.core.async.impl.protocols :as impl]   [clojure.core.async.impl.mutex :as mutex]   ;;; added mutex
+            [clojure.core.async.impl.runtime :as rt]
             [clojure.set :as set])
-  (:import [clojure.core.async.impl.mutex ILock]                                           ;;; [java.util.concurrent.locks Lock]
-           ))                                                                            ;;; [java.util.concurrent.atomic AtomicReferenceArray]
+  (:import ))                                       ;;; [java.util.concurrent.atomic AtomicReferenceArray]
 
 (defn debug [x]
   (pprint x)
   x)
-
-(def ^{:const true :tag 'long} FN-IDX 0)
-(def ^{:const true :tag 'long} STATE-IDX 1)
-(def ^{:const true :tag 'long} VALUE-IDX 2)
-(def ^{:const true :tag 'long} BINDINGS-IDX 3)
-(def ^{:const true :tag 'long} EXCEPTION-FRAMES 4)
-(def ^{:const true :tag 'long} USER-START-IDX 5)
-
-(defn aset-object [^System.Array arr ^long idx o]                            ;;; ^AtomicReferenceArray -- for now, replace with a regular array.  We'll work on the atomic version eventully.
-  (.SetValue arr o idx))                                                     ;;; (.set arr idx o)
-
-(defn aget-object [^System.Array arr ^long idx]                              ;;; ^AtomicReferenceArray -- for now, replace with a regular array.  We'll work on the atomic version eventully.
-  (.GetValue arr idx))                                                       ;;; .get
-
-(defmacro aset-all!
-  [arr & more]
-  (assert (even? (count more)) "Must give an even number of args to aset-all!")
-  (let [bindings (partition 2 more)
-        arr-sym (gensym "statearr-")]
-    `(let [~arr-sym ~arr]
-       ~@(map
-          (fn [[idx val]]
-            `(aset-object ~arr-sym ~idx ~val))
-          bindings)
-       ~arr-sym)))
 
 ;; State monad stuff, used only in SSA construction
 
@@ -217,7 +191,7 @@
   IEmittableInstruction
   (emit-instruction [this state-sym]
     (if (= value ::value)
-      `[~(:id this) (aget-object ~state-sym ~VALUE-IDX)]
+      `[~(:id this) (rt/aget-object ~state-sym ~rt/VALUE-IDX)]
       `[~(:id this) ~value])))
 
 (defrecord RawCode [ast locals]
@@ -317,11 +291,10 @@
   (terminate-block [_this state-sym _]
     `(do (case ~val-id
            ~@(concat (mapcat (fn [test blk]
-                               `[~test (aset-all! ~state-sym
-                                                  ~STATE-IDX ~blk)])
+                               `[~test (rt/aset-all! ~state-sym ~rt/STATE-IDX ~blk)])
                              test-vals jmp-blocks)
                      (when default-block
-                       `[(do (aset-all! ~state-sym ~STATE-IDX ~default-block)
+                       `[(do (rt/aset-all! ~state-sym ~rt/STATE-IDX ~default-block)
                              :recur)])))
          :recur)))
 
@@ -352,7 +325,7 @@
   (block-references [_this] [block])
   ITerminator
   (terminate-block [_this state-sym _]
-    `(do (aset-all! ~state-sym ~VALUE-IDX ~value ~STATE-IDX ~block)
+    `(do (rt/aset-all! ~state-sym ~rt/VALUE-IDX ~value ~rt/STATE-IDX ~block)
          :recur)))
 
 (defrecord Return [value]
@@ -365,9 +338,7 @@
   (terminate-block [this state-sym custom-terminators]
     (if-let [f (get custom-terminators (terminator-code this))]
       `(~f ~state-sym ~value)
-      `(do (aset-all! ~state-sym
-                      ~VALUE-IDX ~value
-                      ~STATE-IDX ::finished)
+      `(do (rt/aset-all! ~state-sym ~rt/VALUE-IDX ~value ~rt/STATE-IDX ::finished)
            nil))))
 
 (defrecord CondBr [test then-block else-block]
@@ -378,10 +349,8 @@
   ITerminator
   (terminate-block [_this state-sym _]
     `(do (if ~test
-           (aset-all! ~state-sym
-                      ~STATE-IDX ~then-block)
-           (aset-all! ~state-sym
-                      ~STATE-IDX ~else-block))
+           (rt/aset-all! ~state-sym ~rt/STATE-IDX ~then-block)
+           (rt/aset-all! ~state-sym ~rt/STATE-IDX ~else-block))
          :recur)))
 
 (defrecord PushTry [catch-block]
@@ -391,7 +360,7 @@
   (block-references [_this] [catch-block])
   IEmittableInstruction
   (emit-instruction [_this state-sym]
-    `[~'_ (aset-all! ~state-sym ~EXCEPTION-FRAMES (cons ~catch-block (aget-object ~state-sym ~EXCEPTION-FRAMES)))]))
+    `[~'_ (rt/aset-all! ~state-sym ~rt/EXCEPTION-FRAMES (cons ~catch-block (rt/aget-object ~state-sym ~rt/EXCEPTION-FRAMES)))]))
 
 (defrecord PopTry []
   IInstruction
@@ -400,7 +369,7 @@
   (block-references [_this] [])
   IEmittableInstruction
   (emit-instruction [_this state-sym]
-    `[~'_ (aset-all! ~state-sym ~EXCEPTION-FRAMES (rest (aget-object ~state-sym ~EXCEPTION-FRAMES)))]))
+    `[~'_ (rt/aset-all! ~state-sym ~rt/EXCEPTION-FRAMES (rest (rt/aget-object ~state-sym ~rt/EXCEPTION-FRAMES)))]))
 
 (defrecord CatchHandler [catches]
   IInstruction
@@ -410,10 +379,10 @@
   ITerminator
   (terminate-block [_this state-sym _]
     (let [ex (gensym 'ex)]
-      `(let [~ex (aget-object ~state-sym ~VALUE-IDX)]
+      `(let [~ex (rt/aget-object ~state-sym ~rt/VALUE-IDX)]
          (cond
           ~@(for [[handler-idx type] catches
-                  i [`(instance? ~type ~ex) `(aset-all! ~state-sym ~STATE-IDX ~handler-idx)]]
+                  i [`(instance? ~type ~ex) `(rt/aset-all! ~state-sym ~rt/STATE-IDX ~handler-idx)]]
               i)
           :else (throw ~ex))
          :recur))))
@@ -893,7 +862,7 @@
     (if (empty? args)
       []
       (mapcat (fn [sym]
-             `[~sym (aget-object ~state-sym ~(id-for-inst local-map sym))])
+             `[~sym (rt/aget-object ~state-sym ~(id-for-inst local-map sym))])
               args))))
 
 (defn- build-block-body [state-sym blk]
@@ -910,27 +879,27 @@
                     blk)
         results (interleave (map (partial id-for-inst local-map) results) results)]
     (if-not (empty? results)
-      [state-sym `(aset-all! ~state-sym ~@results)]
+      [state-sym `(rt/aset-all! ~state-sym ~@results)]
       [])))
 
 (defn- emit-state-machine [machine num-user-params custom-terminators]
   (let [index (index-state-machine machine)
         state-sym (with-meta (gensym "state_")
                     {:tag 'objects})
-        local-start-idx (+ num-user-params USER-START-IDX)
+        local-start-idx (+ num-user-params rt/USER-START-IDX)
         state-arr-size (+ local-start-idx (count-persistent-values index))
         local-map (atom {::next-idx local-start-idx})
         block-catches (:block-catches machine)]
     `(fn state-machine#
-       ([] (aset-all! (System.Array/CreateInstance Object ~state-arr-size)                           ;;; (AtomicReferenceArray. ~state-arr-size)  -- use an Array for now
-                      ~FN-IDX state-machine#
-                      ~STATE-IDX ~(:start-block machine)))
+       ([] (rt/aset-all! (System.Array/CreateInstance System.Object (int ~state-arr-size))                           ;;; (AtomicReferenceArray. ~state-arr-size)  -- use an Array for now  TODO -- fix!
+                      ~rt/FN-IDX state-machine#
+                      ~rt/STATE-IDX ~(:start-block machine)))
        ([~state-sym]
           (let [old-frame# (clojure.lang.Var/getThreadBindingFrame)
                 ret-value# (try
-                             (clojure.lang.Var/resetThreadBindingFrame (aget-object ~state-sym ~BINDINGS-IDX))
+                             (clojure.lang.Var/resetThreadBindingFrame (rt/aget-object ~state-sym ~rt/BINDINGS-IDX))
                              (loop []
-                               (let [result# (case (int (aget-object ~state-sym ~STATE-IDX))
+                               (let [result# (case (int (rt/aget-object ~state-sym ~rt/STATE-IDX))
                                                ~@(mapcat
                                                   (fn [[id blk]]
                                                     [id `(let [~@(concat (build-block-preamble local-map index state-sym blk)
@@ -942,76 +911,17 @@
                                    (recur)
                                    result#)))
                              (catch Exception ex#                                                                             ;;; Throwable
-                               (aset-all! ~state-sym ~VALUE-IDX ex#)
-                               (if (seq (aget-object ~state-sym ~EXCEPTION-FRAMES))
-                                 (aset-all! ~state-sym ~STATE-IDX (first (aget-object ~state-sym ~EXCEPTION-FRAMES)))
+                               (rt/aset-all! ~state-sym ~rt/VALUE-IDX ex#)
+                               (if (seq (rt/aget-object ~state-sym ~rt/EXCEPTION-FRAMES))
+                                 (rt/aset-all! ~state-sym ~rt/STATE-IDX (first (rt/aget-object ~state-sym ~rt/EXCEPTION-FRAMES)))
                                  (throw ex#))
                                :recur)
                              (finally
-                               (aset-object ~state-sym ~BINDINGS-IDX (clojure.lang.Var/getThreadBindingFrame))
+                               (rt/aset-object ~state-sym ~rt/BINDINGS-IDX (clojure.lang.Var/getThreadBindingFrame))
                                (clojure.lang.Var/resetThreadBindingFrame old-frame#)))]
             (if (identical? ret-value# :recur)
               (recur ~state-sym)
               ret-value#))))))
-
-(defn finished?
-  "Returns true if the machine is in a finished state"
-  [state-array]
-  (identical? (aget-object state-array STATE-IDX) ::finished))
-
-(defn- fn-handler
-  [f]
-  (reify
-   ILock                             ;;; Lock
-   (lock [_])
-   (unlock [_])
-
-   impl/Handler
-   (active? [_] true)
-   (blockable? [_] true)
-   (lock-id [_] 0)
-   (commit [_] f)))
-
-
-(defn run-state-machine [state]
-  ((aget-object state FN-IDX) state))
-
-(defn run-state-machine-wrapped [state]
-  (try
-    (run-state-machine state)
-    (catch Exception ex                                                       ;;; Throwable
-      (impl/close! (aget-object state USER-START-IDX))
-      (throw ex))))
-
-(defn take! [state blk c]
-  (if-let [cb (impl/take! c (fn-handler
-                                   (fn [x]
-                                     (aset-all! state VALUE-IDX x STATE-IDX blk)
-                                     (run-state-machine-wrapped state))))]
-    (do (aset-all! state VALUE-IDX @cb STATE-IDX blk)
-        :recur)
-    nil))
-
-(defn put! [state blk c val]
-  (if-let [cb (impl/put! c val (fn-handler (fn [ret-val]
-                                             (aset-all! state VALUE-IDX ret-val STATE-IDX blk)
-                                             (run-state-machine-wrapped state))))]
-    (do (aset-all! state VALUE-IDX @cb STATE-IDX blk)
-        :recur)
-    nil))
-
-(defn return-chan [state value]
-  (let [c (aget-object state USER-START-IDX)]
-           (when-not (nil? value)
-             (impl/put! c value (fn-handler (fn [_] nil))))
-           (impl/close! c)
-           c))
-
-(def async-custom-terminators
-  {'clojure.core.async/<! `take!
-   'clojure.core.async/>! `put!
-   'clojure.core.async/alts! 'clojure.core.async/ioc-alts!
-   :Return `return-chan})
 
 (defn mark-transitions
   {:pass-info {:walk :post :depends #{} :after an-clr/default-passes}}

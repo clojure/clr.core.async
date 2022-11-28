@@ -26,7 +26,6 @@
 (defn aget-object [^System.Array arr ^long idx]                              ;;; ^AtomicReferenceArray -- for now, replace with a regular array.  We'll work on the atomic version eventully.
   (.GetValue arr idx))                                                       ;;; .get
 
-
 (defmacro aset-all!
   [arr & more]
   (assert (even? (count more)) "Must give an even number of args to aset-all!")

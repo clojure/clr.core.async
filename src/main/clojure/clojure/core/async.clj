@@ -458,7 +458,7 @@ to catch and handle."
   [& body]
   (let [crossing-env (zipmap (keys &env) (repeatedly gensym))]
     `(let [c# (chan 1)
-           captured-bindings# (Var/getThreadBindingFrame)]
+           captured-bindings# (clojure.lang.Var/getThreadBindingFrame)]
        (dispatch/run
          (^:once fn* []
           (let [~@(mapcat (fn [[l sym]] [sym `(^:once fn* [] ~(vary-meta l dissoc :tag))]) crossing-env)
@@ -479,7 +479,7 @@ to catch and handle."
   f when completed, then close."
   [f]
   (let [c (chan 1)]
-    (let [binds (Var/getThreadBindingFrame)]
+    (let [binds (clojure.lang.Var/getThreadBindingFrame)]
       (.newThread counted-thread-factory                                  ;;; .execute thread-macro-executor
                 (fn []
                   (Var/resetThreadBindingFrame binds)
@@ -1016,7 +1016,7 @@ to catch and handle."
                          (fn [ret]
                            (aset rets i ret)
                            (when (zero? (swap! dctr dec))
-                             (put! dchan (let [a (System.Array/CreateInstance Object cnt)] (.CopyTo rets a 0) a)))))       ;;; (Arrays/copyOf rets cnt)
+                             (put! dchan (let [a (System.Array/CreateInstance System.Object (int cnt))] (.CopyTo rets a 0) a)))))       ;;; (Arrays/copyOf rets cnt)
                        (range cnt))]
        (if (zero? cnt)
          (close! out)
