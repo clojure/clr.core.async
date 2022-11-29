@@ -67,7 +67,7 @@
     (when-not (= (.Count puts) 0)
 	    (loop [curr-node (.First puts)
 		       next-node (.Next curr-node)]   ;; curr-node not null at init because count is not 0
-		  (when-not (impl/active? (.Value curr-node))
+		  (when-not (impl/active? (first (.Value curr-node)))		  
 		    (.Remove puts curr-node))
 		  (when next-node
 		    (recur next-node (.Next next-node))))))		   		   
@@ -123,7 +123,7 @@
                    (let ;;; [iter (.iterator takes)
                         ;;;  take-cbs (loop [takers []]
                         ;;;             (if (and (.hasNext iter) (pos? (count buf)))
-                        ;;;               (let [^Lock taker (.hasNext iter)]
+                        ;;;               (let [^Lock taker (.next iter)]
                         ;;;                 (.lock taker)
                         ;;;                 (let [ret (and (impl/active? taker) (impl/commit taker))]
                         ;;;                  (.unlock taker)
@@ -188,16 +188,16 @@
 									  (do (.lock handler) (.lock taker))
 									  (do (.lock taker) (.lock handler)))
 									(let [ret (when (and (impl/active? handler) (impl/active? taker))
-									             [(impl/commit handler) (impl/commit taker)])]
+									             [(impl/commit handler) (impl/commit taker)])
+										  next-node (.Next curr-node)]
 								      (.unlock handler)
 									  (.unlock taker)
 									  (if ret
 									    (do
 										  (.Remove takes curr-node)
 										  ret)
-										(let [next-node (.Next curr-node)]
-										  (when next-node
-										    (recur next-node (.Value next-node))))))))]
+										(when next-node
+										  (recur next-node (.Value next-node)))))))]
 										  
            (if (and put-cb take-cb)
              (do
