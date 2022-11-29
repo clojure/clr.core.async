@@ -80,7 +80,7 @@
   (is (= [0 0 1 0 1 2 0 1 2 3]
          (pipeline-tester pipeline-async 2 (range 1 5) multiplier-async))))
 
-(def sleep-mapping (mapping #(do (System.Threading.Thread/Sleep %) %)))                                 ;;; Thread/sleep 
+(def sleep-mapping (mapping #(do (System.Threading.Thread/Sleep (int %)) %)))                                 ;;; Thread/sleep 
 
 (deftest test-blocking
   (let [times [2000 50 1000 100]]
