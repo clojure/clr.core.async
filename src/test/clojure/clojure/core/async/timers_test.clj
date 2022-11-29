@@ -22,6 +22,6 @@
                                       (swap! test-atom conj i))]
                            (doto (System.Threading.Thread. ^System.Threading.ThreadStart (gen-delegate System.Threading.ThreadStart []  (f))) (.Start)))))]           ;;; (Thread. ^Runnable f) (.start)
     (doseq [thread threads]
-      (.Join ^System.Threading.Thread thread))                                                                               ;;; .join ^Thread 
+      (.Join ^System.Threading.Thread thread))                                                                                                                        ;;; .join ^Thread 
     (is (= @test-atom [3 1 2 0])
         "Timeouts close in order determined by their delays, not in order determined by their creation.")))

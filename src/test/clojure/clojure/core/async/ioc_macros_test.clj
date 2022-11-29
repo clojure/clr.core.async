@@ -65,18 +65,18 @@
                  (try
                    (throw (pause (Exception. "e")))
                    (catch Exception e
-                     (pause (throw (Exception. (str (.Message e) "e"))))))        ;;; .getMessage
+                     (pause (throw (Exception. (str (.Message e) "e"))))))       ;;; .getMessage
                  (catch Exception e
-                   (throw (throw (Exception. (str (.Message e) "e"))))))          ;;; .getMessage
+                   (throw (throw (Exception. (str (.Message e) "e"))))))         ;;; .getMessage
                (catch Exception e
-                 (.Message e)))))))                                               ;;; .getMessage
+                 (.Message e)))))))                                              ;;; .getMessage
   (testing "exception handlers and the class hierarchy"
     (is
      (runner
       (try
         (pause 10)
-        (throw (ArgumentException.))                                               ;;;  RuntimeException  -- see above
-        (catch SystemException _r                                                 ;;;  RuntimeException  
+        (throw (ArgumentException.))                                             ;;;  RuntimeException  -- see above
+        (catch SystemException _r                                                ;;;  RuntimeException  
           (pause true))
         (catch Exception _e
           (pause false)))))
@@ -84,7 +84,7 @@
      (runner
       (try
         (pause 10)
-        (throw (ArgumentException.))                                               ;;; RuntimeException
+        (throw (ArgumentException.))                                             ;;; RuntimeException
         (catch Exception _e
           (pause true))))))
   (testing "don't explode trying to compile this"
@@ -261,7 +261,7 @@
     (is (= 42
            (runner
             (try 42
-                 (catch Exception ex ex)))))                        ;;; Throwable
+                 (catch Exception ex ex)))))                     ;;; Throwable
     (is (= 42
            (runner
             (try
@@ -272,7 +272,7 @@
           v (runner
              (try
                true
-               (catch Exception _ex false)                        ;;; Throwable
+               (catch Exception _ex false)                       ;;; Throwable
                (finally (pause (reset! a true)))))]
       (is (and @a v)))
 
@@ -289,7 +289,7 @@
                   (try
                     (assert false)
                     (finally (reset! a true))))
-                 (catch Exception ex ex))]                        ;;; Throwable
+                 (catch Exception ex ex))]                       ;;; Throwable
       (is (and @a v)))
 
 
@@ -306,34 +306,34 @@
           v (try (runner
                   (try
                     (try
-                      (throw (InvalidOperationException. "42"))                            ;;; AssertionError   + stringify 42
+                      (throw (InvalidOperationException. "42"))         ;;; AssertionError   + stringify 42
                       (finally (swap! a inc)))
                     (finally (swap! a inc))))
-                 (catch InvalidOperationException ex ex))]                            ;;; AssertionError
+                 (catch InvalidOperationException ex ex))]              ;;; AssertionError
       (is (= @a 2)))
 
    (let [a (atom 0)
           v (try (runner
                   (try
                     (try
-                      (throw (InvalidOperationException. "42"))                            ;;; AssertionError   + stringify 42
-                      (catch Exception ex (throw ex))                              ;;; Throwable
+                      (throw (InvalidOperationException. "42"))         ;;; AssertionError   + stringify 42
+                      (catch Exception ex (throw ex))                   ;;; Throwable
                       (finally (swap! a inc)))
-                    (catch Exception ex (throw ex))                              ;;; Throwable
+                    (catch Exception ex (throw ex))                     ;;; Throwable
                     (finally (swap! a inc))))
-                 (catch InvalidOperationException ex ex))]                            ;;; AssertionError
+                 (catch InvalidOperationException ex ex))]              ;;; AssertionError
       (is (= @a 2)))
 
    (let [a (atom 0)
           v (try (runner
                   (try
                     (try
-                      (throw (InvalidOperationException. (pause "42")))                            ;;; AssertionError  + stringify 42
-                      (catch Exception ex (pause (throw ex)))                              ;;; Throwable
+                      (throw (InvalidOperationException. (pause "42")))             ;;; AssertionError  + stringify 42
+                      (catch Exception ex (pause (throw ex)))                       ;;; Throwable
                       (finally (pause (swap! a inc))))
-                    (catch Exception ex (pause (throw ex)))                              ;;; Throwable
+                    (catch Exception ex (pause (throw ex)))                         ;;; Throwable
                     (finally (pause (swap! a inc)))))
-                 (catch InvalidOperationException ex ex))]                            ;;; AssertionError
+                 (catch InvalidOperationException ex ex))]                          ;;; AssertionError
      (is (= @a 2)))))
 
 
@@ -564,13 +564,13 @@
        (ioc/run-state-machine state#)
        [state# (ioc/aget-object state# ioc/VALUE-IDX)])))
 
-#_(deftest test-binding                                                                           ;;;TODO
-  (let [results (atom {})
-        exception (atom nil)]
+#_(deftest test-binding                                                                                  ;;; This fails.  I have no idea how it is supposed to work.
+  (let [results (atom {})                                                                                ;;; I cannot even make sense of the output of the park-runner macro expansion.
+        exception (atom nil)]                                                    
     ;; run the machine on another thread without any existing binding frames.
-    (doto (Thread.
-           ^Runnable
-           (fn []
+    (doto (System.Threading.Thread.                                                                              ;;; Thread.
+           ^System.Threading.ThreadStart                                                                                          ;;; ^Runnable 
+           (gen-delegate System.Threading.ThreadStart [] (fn []                                                                   ;;; add gen-delegate call
              (try
                (let [[state result] (park-runner (binding [*1 2] (park 10) 100))]
                  (ioc/run-state-machine state)
@@ -579,10 +579,12 @@
                  ;; environment on this thread, so use an atom to
                  ;; report results back to the main thread.
                  (reset! results {:park-value result :final-value (ioc/aget-object state ioc/VALUE-IDX)}))
-               (catch Throwable t
-                 (reset! exception t)))))
-      (.start)
-      (.join))
-    (is (= 10 (:park-value @results)))
+               (catch Exception t                                                                                ;;; Throwable
+                 (reset! exception t))))))
+      (.Start)                                                                                                   ;;; .start
+      (.Join))                                                                                                   ;;; .join
+    (prn "results = " @results)
+	(prn "exception = " @exception)
+	(is (= 10 (:park-value @results)))
     (is (= 100 (:final-value @results)))
     (is (if @exception (throw @exception) true))))

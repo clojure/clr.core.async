@@ -31,7 +31,7 @@ to catch and handle."
             [clojure.core.async.impl.concurrent :as conc]
             )
   (:import [clojure.lang AtomicLong]                                ;;; [java.util.concurrent.atomic AtomicLong]
-           [clojure.core.async.impl.mutex ILock]                   ;;; [java.util.concurrent.locks Lock]
+           [clojure.core.async.impl.mutex ILock]                    ;;; [java.util.concurrent.locks Lock]
                                                                     ;;; [java.util.concurrent Executors Executor ThreadLocalRandom]
            [System.Collections ArrayList]                           ;;; [java.util Arrays ArrayList]
            [clojure.lang Var]))
@@ -45,7 +45,7 @@ to catch and handle."
    (fn-handler f true))
   ([f blockable]
    (reify
-     ILock                                                           ;;; Lock
+     ILock                                                          ;;; Lock
      (lock [_])
      (unlock [_])
 
@@ -239,11 +239,11 @@ to catch and handle."
           (recur (inc i)))))))
 
 (defn- alt-flag []
-  (let [^ILock m (mutex/mutex)                              ;;; Lock
+  (let [^ILock m (mutex/mutex)                    ;;; Lock
         flag (atom true)
         id (.incrementAndGet id-gen)]
     (reify
-     ILock                                                   ;;;  Lock
+     ILock                                        ;;;  Lock
      (lock [_] (.lock m))
      (unlock [_] (.unlock m))
 
@@ -257,7 +257,7 @@ to catch and handle."
 
 (defn- alt-handler [^ILock flag cb]                           ;;; ^Lock
   (reify
-     ILock                                                   ;;; Lock
+     ILock                                                    ;;; Lock
      (lock [_] (.lock flag))
      (unlock [_] (.unlock flag))
 
@@ -470,8 +470,8 @@ to catch and handle."
             (ioc/run-state-machine-wrapped state#))))
        c#)))
 
-(defonce ^:private counted-thread-factory                               ;;; ^Executor thread-macro-executor       ***** Not having executors, we will have to use our regular thread pool.
-   (conc/counted-thread-factory "async-thread-macro-%d" true))          ;;; (Executors/newCachedThreadPool (conc/counted-thread-factory "async-thread-macro-%d" true))       ***** However, we did define conc/count-thread-factory
+(defonce ^:private counted-thread-factory                                  ;;; ^Executor thread-macro-executor       ***** Not having executors, we will have to use our regular thread pool.
+   (conc/counted-thread-factory "async-thread-macro-%d" true))             ;;; (Executors/newCachedThreadPool (conc/counted-thread-factory "async-thread-macro-%d" true))       ***** However, we did define conc/count-thread-factory
 
 (defn thread-call
   "Executes f in another thread, returning immediately to the calling
@@ -480,7 +480,7 @@ to catch and handle."
   [f]
   (let [c (chan 1)]
     (let [binds (clojure.lang.Var/getThreadBindingFrame)]
-      (.Start (.newThread counted-thread-factory                                  ;;; .execute thread-macro-executor
+      (.Start (.newThread counted-thread-factory                           ;;; .execute thread-macro-executor
                 (fn []
                   (Var/resetThreadBindingFrame binds)
                   (try
@@ -1237,7 +1237,7 @@ to catch and handle."
                               (recur (make-array Object n) 0)))))
                   (do (when (> idx 0)
                         (let [narray (make-array Object idx)]
-                          (Array/Copy arr 0 narray 0 idx)                 ;;; System/arraycopy
+                          (Array/Copy arr 0 narray 0 idx)                     ;;; System/arraycopy
                           (>! out (vec narray))))
                       (close! out))))))
        out)))

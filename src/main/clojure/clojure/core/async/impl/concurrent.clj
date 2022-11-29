@@ -67,4 +67,4 @@
 
 (defonce
   ^{:doc "Number of processors reported by the JVM"}
-  processors Environment/ProcessorCount)       ;;; (.availableProcessors (Runtime/getRuntime))
+  processors Environment/ProcessorCount)                   ;;; (.availableProcessors (Runtime/getRuntime))

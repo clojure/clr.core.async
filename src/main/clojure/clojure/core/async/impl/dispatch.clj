@@ -16,20 +16,20 @@
 ;;;(defonce ^:private in-dispatch (ThreadLocal.))
 
 (defonce executor
-  (delay (tp/thread-pool-executor )))    ;;;  #(.set ^ThreadLocal in-dispatch true)  -- getting rid of this init-fn.
+  (delay (tp/thread-pool-executor )))                                        ;;;  #(.set ^ThreadLocal in-dispatch true)  -- getting rid of this init-fn.
 
 (defn in-dispatch-thread?
   "Returns true if the current thread is a go block dispatch pool thread"
   []
-  false)                                ;;; we have no way to detect (boolean (.get ^ThreadLocal in-dispatch))
+  false)                                                                     ;;; we have no way to detect (boolean (.get ^ThreadLocal in-dispatch))
 
 (defn check-blocking-in-dispatch
   "If the current thread is a dispatch pool thread, throw an exception"
-  []                                   ;;; making this a no-op
-  )                                    ;;; (when (.get ^ThreadLocal in-dispatch)
-                                       ;;;   (throw (IllegalStateException. "Invalid blocking call in dispatch thread")))
+  []                                                                         ;;; making this a no-op
+  )                                                                          ;;; (when (.get ^ThreadLocal in-dispatch)
+                                                                             ;;;   (throw (IllegalStateException. "Invalid blocking call in dispatch thread")))
 
 (defn run
   "Runs Runnable r in a thread pool thread"
-  [r]                                            ;;; ^Runnable  -- we don't have this type.  We are set up to take an IFn -- it will be called with no args
+  [r]                                                                        ;;; ^Runnable  -- we don't have this type.  We are set up to take an IFn -- it will be called with no args
   (impl/exec @executor r))

@@ -59,41 +59,41 @@
       "The written value is the value provided to the read callback."))
 
 (deftest take!-on-caller?
-  (is (apply not= (let [starting-thread (System.Threading.Thread/CurrentThread)                                          ;;; (Thread/currentThread)
+  (is (apply not= (let [starting-thread (System.Threading.Thread/CurrentThread)                                                ;;; (Thread/currentThread)
                         test-channel (chan nil)
                         read-promise (promise)]
-                    (take! test-channel (fn [_] (deliver read-promise (System.Threading.Thread/CurrentThread))) true)    ;;; (Thread/currentThread)
+                    (take! test-channel (fn [_] (deliver read-promise (System.Threading.Thread/CurrentThread))) true)          ;;; (Thread/currentThread)
                     (>!! test-channel :foo)
                     [starting-thread @read-promise]))
       "When on-caller? requested, but no value is immediately
       available, take!'s callback executes on another thread.")
-  (is (apply = (let [starting-thread (System.Threading.Thread/CurrentThread)                                            ;;; (Thread/currentThread)
+  (is (apply = (let [starting-thread (System.Threading.Thread/CurrentThread)                                                   ;;; (Thread/currentThread)
                      test-channel (chan nil)
                      read-promise (promise)]
                  (put! test-channel :foo (constantly nil))
-                 (take! test-channel (fn [_] (deliver read-promise (System.Threading.Thread/CurrentThread))) true)       ;;; (Thread/currentThread)
+                 (take! test-channel (fn [_] (deliver read-promise (System.Threading.Thread/CurrentThread))) true)             ;;; (Thread/currentThread)
                  [starting-thread @read-promise]))
       "When on-caller? requested, and a value is ready to read,
       take!'s callback executes on the same thread.")
-  (is (apply not= (let [starting-thread (System.Threading.Thread/CurrentThread)                                           ;;; (Thread/currentThread)
+  (is (apply not= (let [starting-thread (System.Threading.Thread/CurrentThread)                                                ;;; (Thread/currentThread)
                         test-channel (chan nil)
                         read-promise (promise)]
                     (put! test-channel :foo (constantly nil))
-                    (take! test-channel (fn [_] (deliver read-promise (System.Threading.Thread/CurrentThread))) false)    ;;; (Thread/currentThread)
+                    (take! test-channel (fn [_] (deliver read-promise (System.Threading.Thread/CurrentThread))) false)         ;;; (Thread/currentThread)
                     [starting-thread @read-promise]))
       "When on-caller? is false, and a value is ready to read,
       take!'s callback executes on a different thread."))
 
 (deftest put!-on-caller?
-  (is (apply = (let [starting-thread (System.Threading.Thread/CurrentThread)                                          ;;; (Thread/currentThread)
+  (is (apply = (let [starting-thread (System.Threading.Thread/CurrentThread)                                                   ;;; (Thread/currentThread)
                      test-channel (chan nil)
                      write-promise (promise)]
                  (take! test-channel (fn [_] nil))
-                 (put! test-channel :foo (fn [_] (deliver write-promise (System.Threading.Thread/CurrentThread))) true)       ;;; (Thread/currentThread)
+                 (put! test-channel :foo (fn [_] (deliver write-promise (System.Threading.Thread/CurrentThread))) true)        ;;; (Thread/currentThread)
                  [starting-thread @write-promise]))
       "When on-caller? requested, and a reader can consume the value,
       put!'s callback executes on the same thread.")
-  (is (apply not= (let [starting-thread (System.Threading.Thread/CurrentThread)                                          ;;; (Thread/currentThread)
+  (is (apply not= (let [starting-thread (System.Threading.Thread/CurrentThread)                                                ;;; (Thread/currentThread)
                         test-channel (chan nil)
                         write-promise (promise)]
                     (take! test-channel (fn [_] nil))
@@ -101,10 +101,10 @@
                     [starting-thread @write-promise]))
       "When on-caller? is false, but a reader can consume the value,
       put!'s callback executes on a different thread.")
-  (is (apply not= (let [starting-thread (System.Threading.Thread/CurrentThread)                                          ;;; (Thread/currentThread)
+  (is (apply not= (let [starting-thread (System.Threading.Thread/CurrentThread)                                                ;;; (Thread/currentThread)
                         test-channel (chan nil)
                         write-promise (promise)]
-                    (put! test-channel :foo (fn [_] (deliver write-promise (System.Threading.Thread/CurrentThread))) true)       ;;; (Thread/currentThread)
+                    (put! test-channel :foo (fn [_] (deliver write-promise (System.Threading.Thread/CurrentThread))) true)     ;;; (Thread/currentThread)
                     (take! test-channel (fn [_] nil))
                     [starting-thread @write-promise]))
       "When on-caller? requested, but no reader can consume the value,

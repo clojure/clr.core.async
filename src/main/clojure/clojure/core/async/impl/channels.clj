@@ -101,18 +101,18 @@
   (put!
    [this val handler]
    (when (nil? val)
-     (throw (ArgumentException. "Can't put nil on channel")))                 ;;; IllegalArgumentException
+     (throw (ArgumentException. "Can't put nil on channel")))                       ;;; IllegalArgumentException
    (.lock mutex)
    (cleanup this)
    (if @closed
-     (let [^ILock handler handler]                                            ;;; ^Lock
+     (let [^ILock handler handler]                                                  ;;; ^Lock
        (.lock handler)
        (when (impl/active? handler) (impl/commit handler))
        (.unlock handler)
        (.unlock mutex)
        (box false))
-     (let [^ILock handler handler]                                            ;;; ^Lock
-       (if (and buf (not (impl/full? buf)) (not (= (.Count takes) 0)))        ;;; (.isEmpty takes)
+     (let [^ILock handler handler]                                                  ;;; ^Lock
+       (if (and buf (not (impl/full? buf)) (not (= (.Count takes) 0)))              ;;; (.isEmpty takes)
          (do
            (.lock handler)
            (let [put-cb (and (impl/active? handler) (impl/commit handler))]
@@ -261,7 +261,7 @@
 			     (loop [cbs []
 				        curr-node (.First puts)]
 				   (let [next-node (.Next curr-node)
-						 [^ILock putter val] (.Value curr-node)]                               ;;; ^Lock
+						 [^ILock putter val] (.Value curr-node)]                              ;;; ^Lock
 				   (.lock putter)
 				   (let [cb (and (impl/active? putter) (impl/commit putter))]
 				     (.unlock putter)
@@ -303,7 +303,7 @@
 			 (when (.First puts)
 			   (loop [curr-node (.First puts)]
                  (let [next-node (.Next curr-node)
-					   [^ILock putter val] (.Value curr-node)]                           ;;; ^Lock
+					   [^ILock putter val] (.Value curr-node)]                                ;;; ^Lock
                    (if (< (impl/lock-id handler) (impl/lock-id putter))
                      (do (.lock handler) (.lock putter))
                      (do (.lock putter) (.lock handler)))
@@ -338,10 +338,10 @@
              (do
                (when (impl/blockable? handler)
                  (assert-unlock mutex
-                                (< (.Count takes) impl/MAX-QUEUE-SIZE)                                ;;; .size
+                                (< (.Count takes) impl/MAX-QUEUE-SIZE)                        ;;; .size
                                 (str "No more than " impl/MAX-QUEUE-SIZE
                                      " pending takes are allowed on a single channel."))
-                 (.AddLast takes handler))                                                            ;;; .add 
+                 (.AddLast takes handler))                                                    ;;; .add 
                (.unlock mutex)
                nil)))))))
 
@@ -357,7 +357,7 @@
        nil)
      (do
        (reset! closed true)
-       (when (and buf (= (.Count puts) 0))                                                          ;;; (.isEmpty puts)
+       (when (and buf (= (.Count puts) 0))                                                    ;;; (.isEmpty puts)
          (add! buf))
 ;;;       (let [iter (.iterator takes)]
 ;;;         (when (.hasNext iter)
@@ -374,7 +374,7 @@
        (when (.First takes)
 	     (loop [curr-node (.First takes)]
 		   (let [next-node (.Next curr-node)
-		         ^ILock taker (.Value curr-node)]                                                   ;;; ^Lock
+		         ^ILock taker (.Value curr-node)]                                             ;;; ^Lock
 		     (.lock taker)
 			 (let [take-cb (and (impl/active? taker) (impl/commit taker))]
 			   (.unlock taker)
