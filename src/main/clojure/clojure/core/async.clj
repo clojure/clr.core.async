@@ -480,7 +480,7 @@ to catch and handle."
   [f]
   (let [c (chan 1)]
     (let [binds (clojure.lang.Var/getThreadBindingFrame)]
-      (.newThread counted-thread-factory                                  ;;; .execute thread-macro-executor
+      (.Start (.newThread counted-thread-factory                                  ;;; .execute thread-macro-executor
                 (fn []
                   (Var/resetThreadBindingFrame binds)
                   (try
@@ -488,7 +488,7 @@ to catch and handle."
                       (when-not (nil? ret)
                         (>!! c ret)))
                     (finally
-                      (close! c))))))
+                      (close! c)))))))
     c))
 
 (defmacro thread
