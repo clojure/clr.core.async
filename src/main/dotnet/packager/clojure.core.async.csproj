@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
+  </PropertyGroup>
+
+	<PropertyGroup>
+		<PackageId>clojure.core.async</PackageId>
+		<RootNamespace>clojure.tools</RootNamespace>
+		<Title>clojure.core.async</Title>
+		<Product>clojure.core.async</Product>
+		<AssemblyTitle>clojure.core.async</AssemblyTitle>
+		<Authors>David Miller and ClojureCLR contributors</Authors>
+		<Description>A port of core.async to ClojureCLR</Description>
+		<Copyright>Copyright © Rich Hickey, David Miller and ClojureCLR contributors</Copyright>
+		<PackageLicenseExpression>EPL-1.0</PackageLicenseExpression>
+		<RepositoryUrl>https://github.com/clojure/clojure.tools.namesapce</RepositoryUrl>
+		<Company>ClojureCLR contributors</Company>
+		<PackageTags>Clojure;ClojureCLR</PackageTags>
+		<Version>1.6.673</Version>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<EmbeddedResource CopyToOutputDirectory="Never" Include ="..\..\clojure\clojure\core\**\*"/>
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="clojure.tools.analyzer.clr" Version="1.2.3" />
+	</ItemGroup>
+
+</Project>

@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.4.33103.184
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "clojure.core.async", "clojure.core.async.csproj", "{1F5B66E3-2E3E-4BAA-BD78-7C834767EFC1}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1F5B66E3-2E3E-4BAA-BD78-7C834767EFC1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1F5B66E3-2E3E-4BAA-BD78-7C834767EFC1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1F5B66E3-2E3E-4BAA-BD78-7C834767EFC1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1F5B66E3-2E3E-4BAA-BD78-7C834767EFC1}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {A704628F-06D0-4222-8D41-449E77D41DF1}
+	EndGlobalSection
+EndGlobal
