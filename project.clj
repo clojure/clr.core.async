@@ -1,4 +1,4 @@
-(defproject org.clojure.clr/core.async "1.6.673"
+(defproject org.clojure.clr/core.async "1.6.673.1"
   :description "A port of core.async to ClojureCLR"
   :url "https://github.com/clojure/clr.core.async"
   :license {:name "Eclipse Public License"

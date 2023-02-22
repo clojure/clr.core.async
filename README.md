@@ -4,18 +4,20 @@ A port of [clojure/core.async](https://github.com/clojure/core.async) library to
 
 > A Clojure library designed to provide facilities for async programming and communication.
 
+
+
 ## Releases
 
 Nuget reference:
 
 ```
-    PM> Install-Package clojure.core.async -Version 1.6.673 
+    PM> Install-Package clojure.core.async -Version 1.6.673.1 
 ```
 	
 Leiningen/Clojars reference:
 
 ```
-   [org.clojure.clr/core.async "1.6.673"]
+   [org.clojure.clr/core.async "1.6.673.1"]
 ```
    
 
