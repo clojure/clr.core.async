@@ -1,9 +1,9 @@
-(defproject org.clojure.clr/core.async "1.6.673.1"
+(defproject org.clojure.clr/core.async "1.6.673.2"
   :description "A port of core.async to ClojureCLR"
   :url "https://github.com/clojure/clr.core.async"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
-  :dependencies [[org.clojure.clr/tools.analyzer.clr "1.2.3"]]
+  :dependencies [[org.clojure.clr/tools.analyzer.clr "1.2.3.1"]]
   :deploy-repositories [["clojars" {:url "https://clojars.org/repo/"
                                     :sign-releases  false}]]  
   :warn-on-reflection true

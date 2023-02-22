@@ -11,13 +11,13 @@ A port of [clojure/core.async](https://github.com/clojure/core.async) library to
 Nuget reference:
 
 ```
-    PM> Install-Package clojure.core.async -Version 1.6.673.1 
+    PM> Install-Package clojure.core.async -Version 1.6.673.2 
 ```
 	
 Leiningen/Clojars reference:
 
 ```
-   [org.clojure.clr/core.async "1.6.673.1"]
+   [org.clojure.clr/core.async "1.6.673.2"]
 ```
    
 
