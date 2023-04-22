@@ -25,7 +25,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="clojure.tools.analyzer.clr" Version="1.2.3.1" />
+		<PackageReference Include="clojure.tools.analyzer.clr" Version="1.2.4" />
 	</ItemGroup>
 
 </Project>
