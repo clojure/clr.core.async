@@ -19,3 +19,5 @@ obj/
 *.user
 *.suo
 *.nupkg
+
+.cpcache/

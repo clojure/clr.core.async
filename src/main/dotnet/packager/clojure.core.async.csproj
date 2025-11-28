@@ -12,7 +12,7 @@
 		<AssemblyTitle>clojure.core.async</AssemblyTitle>
 		<Authors>David Miller and ClojureCLR contributors</Authors>
 		<Description>A port of core.async to ClojureCLR</Description>
-		<Copyright>Copyright © Rich Hickey, David Miller and ClojureCLR contributors</Copyright>
+		<Copyright>Copyright © Rich Hickey and ClojureCLR contributors, 2025</Copyright>
 		<PackageLicenseExpression>EPL-1.0</PackageLicenseExpression>
 		<RepositoryUrl>https://github.com/clojure/clojure.tools.namesapce</RepositoryUrl>
 		<Company>ClojureCLR contributors</Company>
@@ -25,7 +25,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="clojure.tools.analyzer.clr" Version="1.2.4" />
+		<PackageReference Include="clojure.tools.analyzer.clr" Version="1.3.2" />
 	</ItemGroup>
 
 </Project>

@@ -1,0 +1,10 @@
+{:paths ["src/main/clojure"]
+ :deps
+ {io.github.clojure/tools.analyzer.clr {:git/tag "v1.3.2" :git/sha "732a0f4"}}
+
+ :aliases
+ {:test
+  {:extra-paths ["src/test/clojure"]
+   :extra-deps {io.github.dmiller/test-runner {:git/sha "c055ea13d19c6a9b9632aa2370fcc2215c8043c3"}}
+   :exec-fn cognitect.test-runner.api/test
+   :exec-args {:dirs ["src/test/clojure"]}}}}
