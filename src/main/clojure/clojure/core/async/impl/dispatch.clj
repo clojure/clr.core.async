@@ -29,7 +29,18 @@
   )                                                                          ;;; (when (.get ^ThreadLocal in-dispatch)
                                                                              ;;;   (throw (IllegalStateException. "Invalid blocking call in dispatch thread")))
 
+(defn ex-handler
+  "conveys given Exception to current thread's default uncaught handler. returns nil"
+  [ex]
+  ;;;(-> (Thread/currentThread)                                              ;;; no equivalent on CLR
+  ;;;    .getUncaughtExceptionHandler
+  ;;;    (.uncaughtException (Thread/currentThread) ex))
+  nil)
+
 (defn run
-  "Runs Runnable r in a thread pool thread"
+  "Runs Runnable r on current thread when :on-caller? meta true, else in a thread pool thread."
   [r]                                                                        ;;; ^Runnable  -- we don't have this type.  We are set up to take an IFn -- it will be called with no args
-  (impl/exec @executor r))
+  (if (-> r meta :on-caller?)
+    (try (.invoke ^clojure.lang.IFn r) (catch Exception t (ex-handler t)))                        ;;; (.run r) Exception  
+    (impl/exec @executor r)))
+  

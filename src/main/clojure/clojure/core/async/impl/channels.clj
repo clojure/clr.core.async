@@ -30,6 +30,10 @@
   (cleanup [_])
   (abort [_]))
 
+(defn appm
+  "returns closure that applies f to arg and has the metadata of f"
+  [f arg] 
+  (with-meta #(f arg) (meta f)))
 
 ;;; Two issues on translating the iterations encountered below:
 ;;;   (a) the iterator/enumerator models of JVM/CLR, respectively, are different
@@ -80,7 +84,7 @@
 ;;;         (let [put-cb (and (impl/active? putter) (impl/commit putter))]
 ;;;           (.unlock putter)
 ;;;           (when put-cb
-;;;             (dispatch/run (fn [] (put-cb true))))
+;;;              (dispatch/run (appm put-cb true)))
 ;;;           (when (.hasNext iter)
 ;;;             (recur (.next iter)))))))
 ;; this is more straightforward -- enumerator vs iterator again, but no delete
@@ -91,7 +95,7 @@
           (let [put-cb (and (impl/active? putter) (impl/commit putter))]
             (.unlock putter)
             (when put-cb
-              (dispatch/run (fn [] (put-cb true))))  
+               (dispatch/run (appm put-cb true)))  
 		    (when (.MoveNext iter)
               (recur (.Current iter)))))))		   
    (.Clear puts)                                                                    ;;; .clear
@@ -130,7 +134,7 @@
                         ;;;                   (if ret
                         ;;;                     (let [val (impl/remove! buf)]
                         ;;;                       (.remove iter)
-                        ;;;                       (recur (conj takers (fn [] (ret val)))))
+                        ;;;                       (recur (conj takers (appm ret val))))
                         ;;;                     (recur takers))))
                         ;;;               takers))
 						[take-cbs (loop [takers []
@@ -144,7 +148,7 @@
 										  (if ret
 										    (let [val (impl/remove! buf)]
 											  (.Remove takes curr-node)
-											  (recur (conj takers (fn [] (ret val))) next-node))
+											  (recur (conj takers (appm ret val)) next-node))
 											(recur takers next-node))))
 									takers))]					
                      (if (seq take-cbs)
@@ -202,7 +206,7 @@
            (if (and put-cb take-cb)
              (do
                (.unlock mutex)
-               (dispatch/run (fn [] (take-cb val)))
+               (dispatch/run (appm take-cb val))
                (box true))
              (if (and buf (not (impl/full? buf)))
                (do
@@ -275,7 +279,7 @@
              (abort this))
            (.unlock mutex)
            (doseq [cb cbs]
-             (dispatch/run #(cb true)))
+             (dispatch/run (appm cb true)))
            (box val))
          (do (.unlock mutex)
              nil))
@@ -322,7 +326,7 @@
          (if (and put-cb take-cb)
            (do
              (.unlock mutex)
-             (dispatch/run #(put-cb true))
+             (dispatch/run (appm put-cb true))
              (box val))
            (if @closed
              (do
@@ -367,7 +371,7 @@
 ;;;               (.unlock taker)
 ;;;               (when take-cb
 ;;;                 (let [val (when (and buf (pos? (count buf))) (impl/remove! buf))]
-;;;                   (dispatch/run (fn [] (take-cb val)))))
+;;;                   (dispatch/run (appm take-cb val))))
 ;;;               (.remove iter)
 ;;;               (when (.hasNext iter)
 ;;;                 (recur (.next iter)))))))
@@ -380,7 +384,7 @@
 			   (.unlock taker)
 			   (when take-cb
 			     (let [val (when (and buf (pos? (count buf))) (impl/remove! buf))]
-				   (dispatch/run (fn [] (take-cb val)))))
+				   (dispatch/run (appm take-cb val))))
 			   (.Remove takes curr-node)
 			   (when next-node
 			     (recur next-node))))))
@@ -388,14 +392,8 @@
        (.unlock mutex)
        nil))))
 
-(defn- ex-handler [ex]
-  ;;;(-> (Thread/currentThread)
-  ;;;    .getUncaughtExceptionHandler             ------------we have no equivalent of this
-  ;;;    (.uncaughtException (Thread/currentThread) ex))
-  nil)
-
 (defn- handle [buf exh t]
-  (let [else ((or exh ex-handler) t)]
+  (let [else ((or exh dispatch/ex-handler) t)]
     (if (nil? else)
       buf
       (impl/add! buf else))))
