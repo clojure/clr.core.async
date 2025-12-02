@@ -8,16 +8,27 @@ A port of [clojure/core.async](https://github.com/clojure/core.async) library to
 
 ## Releases
 
+Latest stable release: 1.5.2
+
+[CLI/`deps.edn`](https://clojure.org/reference/deps_edn) dependency information:
+
+```clojure
+io.github.clojure/clr.tools.async {:git/tag "v1.7.701" :git/sha "07c6c8a"}
+```
+
+
+
+
 Nuget reference:
 
 ```
-    PM> Install-Package clojure.core.async -Version 1.6.674 
+    PM> Install-Package clojure.core.async -Version 1.7.701
 ```
 	
 Leiningen/Clojars reference:
 
 ```
-   [org.clojure.clr/core.async "1.6.674"]
+   [org.clojure.clr/core.async "1.7.701"]
 ```
    
 
