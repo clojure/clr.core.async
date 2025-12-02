@@ -13,7 +13,7 @@ Latest stable release: 1.5.2
 [CLI/`deps.edn`](https://clojure.org/reference/deps_edn) dependency information:
 
 ```clojure
-io.github.clojure/clr.tools.async {:git/tag "v1.7.701" :git/sha "07c6c8a"}
+io.github.clojure/clr.core.async {:git/tag "v1.7.701" :git/sha "07c6c8a"}
 ```
 
 
